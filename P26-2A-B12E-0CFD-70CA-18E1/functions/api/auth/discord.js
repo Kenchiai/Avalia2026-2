@@ -1,24 +1,37 @@
 /**
- * Cloudflare Pages Function — /api/auth/discord
- * Endpoint de autenticação OAuth2 do Discord (importa user_id, username e avatar).
+ * GET /api/auth/discord
+ * Inicia o fluxo OAuth2: grava um `state` em cookie HttpOnly e redireciona
+ * para o Discord. O `next` opcional volta o usuário para a sala de origem.
  */
-export async function onRequestGet(context) {
-  const { request, env } = context;
-  const url = new URL(request.url);
 
-  if (!env.DISCORD_CLIENT_ID) {
-    return Response.json({
-      configured: false,
-      message: "Defina DISCORD_CLIENT_ID e DISCORD_CLIENT_SECRET nas variáveis do Cloudflare Pages para login real, ou utilize o perfil de sessão local durante o diagnóstico.",
-    });
+import { randomHex } from "../../_lib/crypto.js";
+import { urlAutorizacao } from "../../_lib/discord.js";
+import { criarCookie, destinoSeguro, redirecionar } from "../../_lib/http.js";
+
+const COOKIE_STATE = "sorteio_oauth_state";
+const VALIDADE_STATE_S = 600;
+
+export async function onRequestGet({ request, env }) {
+  const url = new URL(request.url);
+  const destino = destinoSeguro(url.searchParams.get("next"), "/");
+
+  if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET) {
+    return redirecionar("/?auth_error=nao_configurado");
   }
 
-  const redirectUri = new URL("/api/auth/discord/callback", url.origin).href;
-  const authorizeUrl = new URL("https://discord.com/api/oauth2/authorize");
-  authorizeUrl.searchParams.set("client_id", env.DISCORD_CLIENT_ID);
-  authorizeUrl.searchParams.set("redirect_uri", redirectUri);
-  authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("scope", "identify");
+  const state = randomHex(16);
+  const seguro = url.protocol === "https:";
+  const cookie = criarCookie(
+    COOKIE_STATE,
+    JSON.stringify({ state, next: destino }),
+    {
+      httpOnly: true,
+      secure: seguro,
+      sameSite: "Lax",
+      path: "/api/auth/discord",
+      maxAge: VALIDADE_STATE_S,
+    }
+  );
 
-  return Response.redirect(authorizeUrl.href, 302);
+  return redirecionar(urlAutorizacao(request, env.DISCORD_CLIENT_ID, state), { cookies: [cookie] });
 }
