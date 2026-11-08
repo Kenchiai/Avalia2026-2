@@ -5,7 +5,7 @@
   "pages_build_output_dir": "./public",
   "d1_databases": [
     {
-      "binding": "db-p26-2a-b12e-0cfd-70ca-18e1",
+      "binding": "DB",
       "database_name": "db-p26-2a-b12e-0cfd-70ca-18e1",
       "database_id": "aedb59c0-5825-48d7-a5bb-796b93ad68a0"
     }
