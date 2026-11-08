@@ -1,9 +1,0 @@
-# Credenciais locais de desenvolvimento.
-# Copie este arquivo para `.dev.vars` (que é ignorado pelo git) e preencha.
-# Nunca faça commit do `.dev.vars` com valores reais.
-#
-# App Discord: avalia2026-2
-# Portal: https://discord.com/developers/applications
-
-DISCORD_CLIENT_ID = 1569089966770884718
-DISCORD_CLIENT_SECRET = substitua-pelo-client-secret
